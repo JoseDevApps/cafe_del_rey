@@ -1,0 +1,5 @@
+/* Foundations: Spacing */
+:root {
+  --space-page-x: clamp(16px, 3vw, 44px);
+  --space-page-y: clamp(18px, 3vw, 56px);
+}

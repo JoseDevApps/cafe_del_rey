@@ -1,0 +1,49 @@
+@theme {
+  /* Cafe del Rey — “Touchy-style” editorial blocks, but rooted in Los Yungas */
+  --cafe-paper: #f7f2ea;
+  --cafe-ink: #0e0f0c;
+
+  --cafe-terracotta: #de6f14; /* warm header */
+  --cafe-river: #0B3D2E;      /* cool shop stage */
+  --cafe-lilac: #c8aacb;      /* manifesto */
+  --cafe-yungas: #3f6b3e;     /* lush green accent */
+  --cafe-parchment: #efe5d6;  /* subtle surfaces */
+
+  /* Semantic tokens used by the component system */
+  --color-bg: var(--cafe-paper);
+  --color-panel: color-mix(in oklab, var(--cafe-paper) 92%, white);
+  --color-muted: var(--cafe-parchment);
+  --color-fg: var(--cafe-ink);
+  --color-border: color-mix(in oklab, var(--cafe-ink) 14%, transparent);
+
+  /* Primary = ink (Touchy’s “black pills”) */
+  --color-primary: var(--cafe-ink);
+  --color-primary-fg: var(--cafe-paper);
+
+  /* Secondary = terracotta */
+  --color-secondary: var(--cafe-terracotta);
+  --color-secondary-fg: var(--cafe-paper);
+
+  /* Danger still exists, but stays muted */
+  --color-danger: #7f1d1d;
+  --color-danger-fg: var(--cafe-paper);
+
+  --color-link: var(--cafe-yungas);
+}
+
+/* “Cafe del Rey / Night” — keeps the same blocks, flips paper/ink */
+html[data-theme="cafe-rey-night"] {
+  --color-bg: color-mix(in oklab, var(--cafe-ink) 92%, black);
+  --color-panel: color-mix(in oklab, var(--cafe-ink) 86%, black);
+  --color-muted: color-mix(in oklab, var(--cafe-ink) 80%, black);
+  --color-fg: var(--cafe-paper);
+  --color-border: color-mix(in oklab, var(--cafe-paper) 16%, transparent);
+
+  --color-primary: var(--cafe-paper);
+  --color-primary-fg: var(--cafe-ink);
+
+  --color-secondary: var(--cafe-yungas);
+  --color-secondary-fg: var(--cafe-paper);
+
+  --color-link: color-mix(in oklab, var(--cafe-lilac) 75%, white);
+}

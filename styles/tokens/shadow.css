@@ -1,0 +1,10 @@
+/* Foundations: Shadow & Effects */
+:root {
+  --ui-shadow: 0 14px 38px -28px color-mix(in oklab, var(--color-fg) 35%, transparent);
+  --ui-shadow-soft: 0 10px 26px -22px color-mix(in oklab, var(--color-fg) 26%, transparent);
+}
+
+html[data-theme="cafe-rey-night"] {
+  --ui-shadow: 0 22px 55px -28px color-mix(in oklab, #000 72%, transparent);
+  --ui-shadow-soft: 0 16px 42px -26px color-mix(in oklab, #000 64%, transparent);
+}

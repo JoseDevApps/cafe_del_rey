@@ -1,0 +1,5 @@
+/* Foundations: Opacity */
+:root {
+  --opacity-disabled: 0.55;
+  --opacity-muted: 0.72;
+}

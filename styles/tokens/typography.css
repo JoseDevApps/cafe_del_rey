@@ -1,0 +1,12 @@
+/* Foundations: Typography (Merienda + Azeret Mono set in layout.tsx) */
+@theme {
+  --font-display: var(--font-merienda);
+  --font-sans: var(--font-azeret-mono);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Optional: consistent rhythm */
+:root {
+  --leading-body: 1.55;
+}
+body { line-height: var(--leading-body); }

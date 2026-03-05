@@ -1,0 +1,38 @@
+services:
+  frontend:
+    container_name: next_frontend_dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+
+    # Force bind to all interfaces (good practice in containers)
+    command: npm run dev -- --hostname 0.0.0.0 --port 3000
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      NODE_ENV: development
+
+      # Canonical base URL used for metadata
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+
+      # File watching in Docker (reliable on Windows/macOS)
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+
+      # IMPORTANT: Next/webpack uses Watchpack
+      WATCHPACK_POLLING: "true"
+      WATCHPACK_POLLING_INTERVAL: "1000"
+
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next
+
+    tty: true
+    stdin_open: true
+
+volumes:
+  node_modules:
+  next_cache:
