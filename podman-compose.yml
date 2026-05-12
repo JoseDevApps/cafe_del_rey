@@ -1,0 +1,67 @@
+# Podman Compose configuration for Café del Rey
+# Compatible with: podman-compose >= 1.0.6 or podman compose (Podman >= 4.4)
+#
+# Key differences from docker-compose.yml:
+#   - userns_mode: keep-id  → preserves UID/GID for rootless volume mounts
+#   - Volume labels :Z       → fixes SELinux context on Fedora/RHEL/CentOS
+#   - No "manager-core" auth — Podman uses ~/.config/containers/auth.json
+#
+# Usage:
+#   podman-compose -f podman-compose.yml up --build    # via podman-compose CLI
+#   podman compose   -f podman-compose.yml up --build  # via Podman 4.4+ built-in
+
+services:
+  api:
+    container_name: cafe_api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-superadmin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-cambiar_en_produccion}
+      JWT_SECRET: ${JWT_SECRET:-secreto_largo_y_aleatorio_cambiar}
+      JWT_EXPIRE_HOURS: ${JWT_EXPIRE_HOURS:-8}
+      UPLOADS_DIR: /app/uploads
+      DB_PATH: /app/data/cafe.db
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:4001"
+    volumes:
+      - uploads:/app/uploads
+      - db_data:/app/data
+
+  frontend:
+    container_name: next_frontend_dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run dev -- --hostname 0.0.0.0 --port 3000
+    ports:
+      - "4001:3000"
+    # keep-id maps the host UID/GID into the container so rootless Podman
+    # can read/write the bind-mounted source code without permission errors.
+    userns_mode: "keep-id"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_SITE_URL: "http://localhost:4001"
+      NEXT_PUBLIC_API_URL: "http://localhost:8000"
+      API_INTERNAL_URL: "http://api:8000"
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+      WATCHPACK_POLLING: "true"
+      WATCHPACK_POLLING_INTERVAL: "1000"
+    volumes:
+      # Append :Z on SELinux hosts (Fedora/RHEL) to relabel the volume context
+      - .:/app:z
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next
+    depends_on:
+      - api
+    tty: true
+    stdin_open: true
+
+volumes:
+  uploads:
+  db_data:
+  node_modules:
+  next_cache:
