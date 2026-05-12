@@ -3,8 +3,9 @@ import { Badge, Card, Divider, Text } from "@/design-system/components";
 import { CafeHeader } from "@/components/cafe/CafeHeader";
 
 import { ProcessStrip } from "@/components/cafe/ProcessStrip";
-import { ShopItem, type CafeProduct } from "@/components/cafe/ShopItem";
 import { ShopSkeletons } from "@/components/cafe/ShopItemSkeleton";
+import { ProductCarousel } from "@/components/cafe/ProductCarousel";
+import type { CafeProduct } from "@/components/cafe/ShopItem";
 import { fetchProducts } from "@/types/api";
 import Image from "next/image";
 
@@ -130,20 +131,14 @@ function ShopSection({ products }: { products: CafeProduct[] | null }) {
                 Cafés sensacionales
               </Text>
               <p className="mt-2 text-sm leading-relaxed text-[color:color-mix(in_oklab,var(--cafe-paper)_86%,transparent)]">
-                Tres perfiles para empezar. Después, el rabbit hole: molienda, agua, temperatura, ritual.
+                Micro-lotes de altura. Después, el rabbit hole: molienda, agua, temperatura, ritual.
               </p>
             </div>
 
             {products === null ? (
               <ShopSkeletons />
             ) : (
-              <div className="mt-6 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {products.map((p, i) => (
-                  <div key={p.id} className="animate-entry" style={{ animationDelay: `${i * 80}ms` }}>
-                    <ShopItem product={p} />
-                  </div>
-                ))}
-              </div>
+              <ProductCarousel products={products} />
             )}
 
             <div className="mt-6 rounded-[calc(var(--ui-radius)+6px)] border border-[color:color-mix(in_oklab,var(--cafe-paper)_22%,transparent)] bg-[color:color-mix(in_oklab,var(--cafe-paper)_10%,transparent)] p-4">

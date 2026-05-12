@@ -1,4 +1,7 @@
 import json
+import os
+import re
+import uuid
 from typing import Optional
 from database import get_conn
 from schemas import ProductOut, SizeItem
@@ -59,5 +62,55 @@ def clear_product_image(product_id: str) -> bool:
             "UPDATE products SET image_filename = NULL WHERE id = ?",
             (product_id,),
         )
+        conn.commit()
+    return result.rowcount > 0
+
+
+def create_product(data: dict, base_url: str) -> Optional[ProductOut]:
+    """Crea un nuevo producto con ID generado desde el nombre y lo retorna."""
+    slug = re.sub(r"[^a-z0-9]+", "-", data["name"].lower()).strip("-")
+    product_id = f"{slug}-{uuid.uuid4().hex[:6]}"
+    sizes_json = json.dumps(
+        [{"label": s["label"], "price": s["price"]} for s in data.get("sizes", [])]
+    )
+    with get_conn() as conn:
+        conn.execute(
+            """INSERT INTO products
+               (id, name, note, origin, process, elevation,
+                sticker_text, sticker_color, sizes_json, sold_out, image_filename)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)""",
+            (
+                product_id,
+                data["name"],
+                data["note"],
+                data["origin"],
+                data["process"],
+                data.get("elevation", ""),
+                data.get("sticker_text", ""),
+                data.get("sticker_color", "#de6f14"),
+                sizes_json,
+                1 if data.get("sold_out") else 0,
+            ),
+        )
+        conn.commit()
+    return get_product(product_id, base_url)
+
+
+def delete_product(product_id: str) -> bool:
+    """Elimina un producto y su archivo de imagen. Retorna True si fue eliminado."""
+    uploads_dir = os.getenv("UPLOADS_DIR", "/app/uploads")
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT image_filename FROM products WHERE id = ?", (product_id,)
+        ).fetchone()
+        if not row:
+            return False
+        if row["image_filename"]:
+            filepath = os.path.join(uploads_dir, row["image_filename"])
+            try:
+                os.remove(filepath)
+            except FileNotFoundError:
+                pass
+        result = conn.execute("DELETE FROM products WHERE id = ?", (product_id,))
         conn.commit()
     return result.rowcount > 0

@@ -3,8 +3,11 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, status
-from schemas import ProductOut, ImageUploadResponse, OkResponse
-from models import get_all_products, get_product, set_product_image, clear_product_image
+from schemas import ProductOut, ImageUploadResponse, OkResponse, ProductCreate
+from models import (
+    get_all_products, get_product, set_product_image, clear_product_image,
+    create_product, delete_product,
+)
 from auth import get_current_admin
 
 UPLOADS_DIR = Path(os.getenv("UPLOADS_DIR", "/app/uploads"))
@@ -19,6 +22,29 @@ def _base_url(request: Request) -> str:
 @router.get("", response_model=list[ProductOut])
 def list_products(request: Request):
     return get_all_products(_base_url(request))
+
+
+@router.post("", response_model=ProductOut, status_code=201)
+def create_product_endpoint(
+    data: ProductCreate,
+    request: Request,
+    _: str = Depends(get_current_admin),
+):
+    product = create_product(data.model_dump(), _base_url(request))
+    if not product:
+        raise HTTPException(status_code=500, detail="Error al crear el producto")
+    return product
+
+
+@router.delete("/{product_id}", response_model=OkResponse)
+def delete_product_endpoint(
+    product_id: str,
+    _: str = Depends(get_current_admin),
+):
+    success = delete_product(product_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    return OkResponse()
 
 
 @router.get("/{product_id}", response_model=ProductOut)

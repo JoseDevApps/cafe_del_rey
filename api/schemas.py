@@ -37,3 +37,15 @@ class ImageUploadResponse(BaseModel):
 
 class OkResponse(BaseModel):
     ok: bool = True
+
+
+class ProductCreate(BaseModel):
+    name: str
+    note: str
+    origin: str
+    process: str
+    elevation: str = ""
+    sticker_text: str = ""
+    sticker_color: str = "#de6f14"
+    sizes: list[SizeItem] = []
+    sold_out: bool = False
