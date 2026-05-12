@@ -136,6 +136,50 @@ export async function createProductAction(
   return { product };
 }
 
+export async function updateProductAction(
+  productId: string,
+  formData: FormData
+): Promise<{ product?: import("@/types/api").ApiProduct; error?: string }> {
+  const token = await getToken();
+
+  const sizes: Array<{ label: string; price: string }> = [];
+  for (let i = 1; i <= 5; i++) {
+    const label = (formData.get(`size_label_${i}`) as string | null)?.trim() ?? "";
+    const price = (formData.get(`size_price_${i}`) as string | null)?.trim() ?? "";
+    if (label && price) sizes.push({ label, price });
+  }
+
+  const body = {
+    name:          (formData.get("name")          as string).trim(),
+    note:          (formData.get("note")          as string).trim(),
+    origin:        (formData.get("origin")        as string).trim(),
+    process:       (formData.get("process")       as string).trim(),
+    elevation:     (formData.get("elevation")     as string | null)?.trim() ?? "",
+    sticker_text:  (formData.get("sticker_text")  as string | null)?.trim() ?? "",
+    sticker_color: (formData.get("sticker_color") as string | null) ?? "#de6f14",
+    sizes,
+    sold_out: formData.get("sold_out") === "true",
+  };
+
+  const res = await fetch(`${API}/products/${productId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    return { error: (err as any).detail ?? "Error al actualizar el producto." };
+  }
+
+  const product = await res.json();
+  return { product };
+}
+
 export async function deleteProductAction(
   productId: string
 ): Promise<{ error?: string }> {

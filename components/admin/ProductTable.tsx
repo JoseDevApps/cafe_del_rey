@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button, useToast } from "@/design-system/components";
 import { ImageUploadModal } from "./ImageUploadModal";
 import { ProductCreateModal } from "./ProductCreateModal";
+import { ProductEditModal } from "./ProductEditModal";
 import type { ApiProduct } from "@/types/api";
 import { toProxyUrl } from "@/types/api";
 import { deleteProductAction } from "@/app/actions/admin";
@@ -17,19 +18,26 @@ type Props = {
 export function ProductTable({ initialProducts }: Props) {
   const toast = useToast();
   const [products, setProducts] = useState(initialProducts);
-  const [editing, setEditing] = useState<ApiProduct | null>(null);
+
+  // Modal states
   const [creating, setCreating] = useState(false);
+  const [editingData, setEditingData] = useState<ApiProduct | null>(null);
+  const [editingImage, setEditingImage] = useState<ApiProduct | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [isDeleting, startDelete] = useTransition();
+
+  function handleCreated(product: ApiProduct) {
+    setProducts((prev) => [...prev, product]);
+  }
+
+  function handleUpdated(product: ApiProduct) {
+    setProducts((prev) => prev.map((p) => (p.id === product.id ? product : p)));
+  }
 
   function handleImageUpdate(productId: string, newUrl: string | null) {
     setProducts((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, image_url: newUrl } : p))
     );
-  }
-
-  function handleCreated(product: ApiProduct) {
-    setProducts((prev) => [...prev, product]);
   }
 
   function handleDeleteConfirm(productId: string) {
@@ -75,7 +83,7 @@ export function ProductTable({ initialProducts }: Props) {
               <th className="hidden sm:table-cell text-left px-4 py-3 tracked-tight text-[11px] uppercase text-fg/60 font-normal">
                 Imagen
               </th>
-              <th className="px-4 py-3 w-52" />
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -97,6 +105,7 @@ export function ProductTable({ initialProducts }: Props) {
                   "transition-colors hover:bg-muted/50"
                 )}
               >
+                {/* Name + origin */}
                 <td className="px-4 py-4">
                   <div className="font-sans text-fg font-medium">{product.name}</div>
                   <div className="tracked-tight text-[10px] uppercase text-fg/50 mt-0.5">
@@ -109,12 +118,14 @@ export function ProductTable({ initialProducts }: Props) {
                   )}
                 </td>
 
+                {/* Process badge */}
                 <td className="hidden md:table-cell px-4 py-4">
                   <span className="rounded-full border border-border bg-muted px-3 py-1 tracked-tight text-[11px] uppercase text-fg/70">
                     {product.process}
                   </span>
                 </td>
 
+                {/* Image thumbnail */}
                 <td className="hidden sm:table-cell px-4 py-4">
                   {product.image_url ? (
                     <div className="relative h-12 w-12 rounded-[calc(var(--ui-radius)-8px)] border border-border overflow-hidden bg-muted">
@@ -133,17 +144,30 @@ export function ProductTable({ initialProducts }: Props) {
                   )}
                 </td>
 
-                <td className="px-4 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                {/* Actions */}
+                <td className="px-4 py-4">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {/* Edit product data */}
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => setEditing(product)}
+                      onClick={() => setEditingData(product)}
                       className="rounded-full"
                     >
-                      {product.image_url ? "Cambiar foto" : "Subir foto"}
+                      Editar
                     </Button>
 
+                    {/* Change / upload image */}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setEditingImage(product)}
+                      className="rounded-full"
+                    >
+                      {product.image_url ? "Foto" : "📷"}
+                    </Button>
+
+                    {/* Delete with 2-step confirmation */}
                     {confirmDelete === product.id ? (
                       <>
                         <Button
@@ -183,25 +207,39 @@ export function ProductTable({ initialProducts }: Props) {
         </table>
       </div>
 
-      {editing && (
-        <ImageUploadModal
-          productId={editing.id}
-          productName={editing.name}
-          currentImageUrl={toProxyUrl(editing.image_url)}
-          onClose={() => setEditing(null)}
-          onSuccess={(url) => {
-            handleImageUpdate(editing.id, url);
-            setEditing(null);
-          }}
-        />
-      )}
-
+      {/* Create modal */}
       {creating && (
         <ProductCreateModal
           onClose={() => setCreating(false)}
           onSuccess={(product) => {
             handleCreated(product);
             setCreating(false);
+          }}
+        />
+      )}
+
+      {/* Edit modal */}
+      {editingData && (
+        <ProductEditModal
+          product={editingData}
+          onClose={() => setEditingData(null)}
+          onSuccess={(product) => {
+            handleUpdated(product);
+            setEditingData(null);
+          }}
+        />
+      )}
+
+      {/* Image upload modal */}
+      {editingImage && (
+        <ImageUploadModal
+          productId={editingImage.id}
+          productName={editingImage.name}
+          currentImageUrl={toProxyUrl(editingImage.image_url)}
+          onClose={() => setEditingImage(null)}
+          onSuccess={(url) => {
+            handleImageUpdate(editingImage.id, url);
+            setEditingImage(null);
           }}
         />
       )}

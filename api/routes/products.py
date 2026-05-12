@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from schemas import ProductOut, ImageUploadResponse, OkResponse, ProductCreate
 from models import (
     get_all_products, get_product, set_product_image, clear_product_image,
-    create_product, delete_product,
+    create_product, update_product, delete_product,
 )
 from auth import get_current_admin
 
@@ -33,6 +33,19 @@ def create_product_endpoint(
     product = create_product(data.model_dump(), _base_url(request))
     if not product:
         raise HTTPException(status_code=500, detail="Error al crear el producto")
+    return product
+
+
+@router.put("/{product_id}", response_model=ProductOut)
+def update_product_endpoint(
+    product_id: str,
+    data: ProductCreate,
+    request: Request,
+    _: str = Depends(get_current_admin),
+):
+    product = update_product(product_id, data.model_dump(), _base_url(request))
+    if not product:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
     return product
 
 

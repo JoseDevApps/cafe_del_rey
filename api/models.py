@@ -96,6 +96,36 @@ def create_product(data: dict, base_url: str) -> Optional[ProductOut]:
     return get_product(product_id, base_url)
 
 
+def update_product(product_id: str, data: dict, base_url: str) -> Optional[ProductOut]:
+    """Actualiza los campos de texto/metadata de un producto. No toca image_filename."""
+    sizes_json = json.dumps(
+        [{"label": s["label"], "price": s["price"]} for s in data.get("sizes", [])]
+    )
+    with get_conn() as conn:
+        result = conn.execute(
+            """UPDATE products SET
+               name=?, note=?, origin=?, process=?, elevation=?,
+               sticker_text=?, sticker_color=?, sizes_json=?, sold_out=?
+               WHERE id=?""",
+            (
+                data["name"],
+                data["note"],
+                data["origin"],
+                data["process"],
+                data.get("elevation", ""),
+                data.get("sticker_text", ""),
+                data.get("sticker_color", "#de6f14"),
+                sizes_json,
+                1 if data.get("sold_out") else 0,
+                product_id,
+            ),
+        )
+        conn.commit()
+    if result.rowcount == 0:
+        return None
+    return get_product(product_id, base_url)
+
+
 def delete_product(product_id: str) -> bool:
     """Elimina un producto y su archivo de imagen. Retorna True si fue eliminado."""
     uploads_dir = os.getenv("UPLOADS_DIR", "/app/uploads")
