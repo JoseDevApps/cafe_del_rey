@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Badge, Card, Divider, Text } from "@/design-system/components";
 import { CafeHeader } from "@/components/cafe/CafeHeader";
-import { RotateHint } from "@/components/cafe/RotateHint";
+
 import { ProcessStrip } from "@/components/cafe/ProcessStrip";
 import { ShopItem, type CafeProduct } from "@/components/cafe/ShopItem";
 import { ShopSkeletons } from "@/components/cafe/ShopItemSkeleton";
@@ -11,7 +11,6 @@ import Image from "next/image";
 export default function CafeHome() {
   return (
     <div className="min-h-dvh bg-bg text-fg">
-      <RotateHint />
       <CafeHeader />
 
       <main className="px-[var(--space-page-x)] py-[var(--space-page-y)] space-y-6">
@@ -138,7 +137,7 @@ function ShopSection({ products }: { products: CafeProduct[] | null }) {
             {products === null ? (
               <ShopSkeletons />
             ) : (
-              <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="mt-6 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {products.map((p, i) => (
                   <div key={p.id} className="animate-entry" style={{ animationDelay: `${i * 80}ms` }}>
                     <ShopItem product={p} />
@@ -255,7 +254,7 @@ function Story() {
 function Footer() {
   return (
     <footer id="contacto" className="pb-8">
-      <div className="grid lg:grid-cols-12 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-4 rounded-[calc(var(--ui-radius)+6px)] border border-border bg-panel p-5 grain">
           <div className="tracked font-sans text-[11px] uppercase text-fg/60">Ubicación</div>
           <Text as="h3" variant="h3" className="mt-2">La Paz, Bolivia</Text>
@@ -285,7 +284,7 @@ function Footer() {
           </div>
         </div>
 
-        <div className="lg:col-span-3 rounded-[calc(var(--ui-radius)+6px)] border border-border bg-panel p-5 grain">
+        <div className="sm:col-span-2 lg:col-span-3 rounded-[calc(var(--ui-radius)+6px)] border border-border bg-panel p-5 grain">
           <div className="tracked font-sans text-[11px] uppercase text-fg/60">Colofón</div>
           <p className="mt-2 text-sm text-fg/80 leading-relaxed">
             Inspiración de layout:{" "}

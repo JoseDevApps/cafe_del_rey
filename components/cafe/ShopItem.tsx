@@ -81,23 +81,23 @@ export function ShopItem({ product }: { product: CafeProduct }) {
         </div>
 
         {/* Quantity + CTA */}
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <div className="flex items-center rounded-full border border-border bg-panel overflow-hidden">
             <button
               type="button"
-              className="h-10 w-10 grid place-items-center hover:bg-muted disabled:opacity-50"
+              className="h-10 w-10 grid place-items-center hover:bg-muted active:bg-muted disabled:opacity-50 transition-colors touch-manipulation"
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               disabled={soldOut}
               aria-label="Disminuir cantidad"
             >
               –
             </button>
-            <div className="h-10 min-w-10 px-3 grid place-items-center tracked-tight text-[11px] uppercase">
+            <div className="h-10 min-w-[2.5rem] px-2 grid place-items-center tracked-tight text-[11px] uppercase select-none">
               {qty}
             </div>
             <button
               type="button"
-              className="h-10 w-10 grid place-items-center hover:bg-muted disabled:opacity-50"
+              className="h-10 w-10 grid place-items-center hover:bg-muted active:bg-muted disabled:opacity-50 transition-colors touch-manipulation"
               onClick={() => setQty((q) => Math.min(9, q + 1))}
               disabled={soldOut}
               aria-label="Aumentar cantidad"
@@ -109,7 +109,7 @@ export function ShopItem({ product }: { product: CafeProduct }) {
           <Button
             variant={soldOut ? "ghost" : "primary"}
             className={cx(
-              "flex-1 rounded-full shadow-none",
+              "flex-1 min-w-[120px] rounded-full shadow-none active:scale-[0.97] transition-transform",
               soldOut
                 ? "border border-border bg-[color:color-mix(in_oklab,var(--color-fg)_6%,transparent)] text-fg/60 hover:bg-[color:color-mix(in_oklab,var(--color-fg)_8%,transparent)]"
                 : "border border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)]"

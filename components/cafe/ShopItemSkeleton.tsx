@@ -36,7 +36,7 @@ export function ShopItemSkeleton() {
 
 export function ShopSkeletons() {
   return (
-    <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div className="mt-6 grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
       {[0, 1, 2].map((i) => (
         <ShopItemSkeleton key={i} />
       ))}
