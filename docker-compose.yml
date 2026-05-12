@@ -1,38 +1,52 @@
 services:
+  api:
+    container_name: cafe_api
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-superadmin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-cambiar_en_produccion}
+      JWT_SECRET: ${JWT_SECRET:-secreto_largo_y_aleatorio_cambiar}
+      JWT_EXPIRE_HOURS: ${JWT_EXPIRE_HOURS:-8}
+      UPLOADS_DIR: /app/uploads
+      DB_PATH: /app/data/cafe.db
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:4001"
+    volumes:
+      - uploads:/app/uploads
+      - db_data:/app/data
+
   frontend:
     container_name: next_frontend_dev
     build:
       context: .
       dockerfile: Dockerfile.dev
-
-    # Force bind to all interfaces (good practice in containers)
     command: npm run dev -- --hostname 0.0.0.0 --port 3000
-
     ports:
       - "4001:3000"
-
     environment:
       NODE_ENV: development
-
-      # Canonical base URL used for metadata
-      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
-
-      # File watching in Docker (reliable on Windows/macOS)
+      NEXT_PUBLIC_SITE_URL: "http://localhost:4001"
+      NEXT_PUBLIC_API_URL: "http://localhost:8000"
+      # Server-side calls to the API use the internal Docker network
+      API_INTERNAL_URL: "http://api:8000"
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: "1000"
-
-      # IMPORTANT: Next/webpack uses Watchpack
       WATCHPACK_POLLING: "true"
       WATCHPACK_POLLING_INTERVAL: "1000"
-
     volumes:
       - .:/app
       - node_modules:/app/node_modules
       - next_cache:/app/.next
-
+    depends_on:
+      - api
     tty: true
     stdin_open: true
 
 volumes:
+  uploads:
+  db_data:
   node_modules:
   next_cache:

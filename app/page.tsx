@@ -1,54 +1,12 @@
+import { Suspense } from "react";
 import { Badge, Card, Divider, Text } from "@/design-system/components";
 import { CafeHeader } from "@/components/cafe/CafeHeader";
 import { RotateHint } from "@/components/cafe/RotateHint";
 import { ProcessStrip } from "@/components/cafe/ProcessStrip";
 import { ShopItem, type CafeProduct } from "@/components/cafe/ShopItem";
-import Image from 'next/image'
-const products: CafeProduct[] = [
-  {
-    id: "rey-1",
-    name: "Rey Miel",
-    note: "Dulzor tropical + cuerpo redondo. Para espresso que sonríe.",
-    origin: "Caranavi · Yungas",
-    process: "Honey",
-    elevation: "1,450–1,750 msnm",
-    sticker: { text: "Lote Miel", color: "color-mix(in oklab, var(--cafe-lilac) 72%, white)" },
-    sizes: [
-      { label: "250 g", price: "Bs 68" },
-      { label: "1 kg", price: "Bs 240" },
-      { label: "2 kg", price: "Bs 450" },
-    ],
-  },
-  {
-    id: "rey-2",
-    name: "Bosque Lavado",
-    note: "Brillante, limpio, con notas cítricas suaves y cacao.",
-    origin: "Irupana · Yungas",
-    process: "Lavado",
-    elevation: "1,500–1,900 msnm",
-    sticker: { text: "Altura", color: "color-mix(in oklab, var(--cafe-yungas) 70%, white)" },
-    sizes: [
-      { label: "250 g", price: "Bs 72" },
-      { label: "1 kg", price: "Bs 255" },
-      { label: "2 kg", price: "Bs 480" },
-    ],
-  },
-  {
-    id: "rey-3",
-    name: "Dorada Natural",
-    note: "Fruta madura, aroma a panela y final largo. Puro sol." ,
-    origin: "Chulumani · Yungas",
-    process: "Natural",
-    elevation: "1,300–1,650 msnm",
-    sticker: { text: "Natural", color: "color-mix(in oklab, var(--cafe-terracotta) 65%, white)" },
-    sizes: [
-      { label: "250 g", price: "Bs 74" },
-      { label: "1 kg", price: "Bs 265" },
-      { label: "2 kg", price: "Bs 500" },
-    ],
-    soldOut: true,
-  },
-];
+import { ShopSkeletons } from "@/components/cafe/ShopItemSkeleton";
+import { fetchProducts } from "@/types/api";
+import Image from "next/image";
 
 export default function CafeHome() {
   return (
@@ -59,7 +17,9 @@ export default function CafeHome() {
       <main className="px-[var(--space-page-x)] py-[var(--space-page-y)] space-y-6">
         <Hero />
 
-        <Shop />
+        <Suspense fallback={<ShopSection products={null} />}>
+          <ShopAsync />
+        </Suspense>
 
         <Manifesto />
 
@@ -77,11 +37,20 @@ export default function CafeHome() {
   );
 }
 
+async function ShopAsync() {
+  let products: CafeProduct[] = [];
+  try {
+    products = await fetchProducts();
+  } catch {
+    // API unavailable — render empty grid gracefully
+  }
+  return <ShopSection products={products} />;
+}
+
 function Hero() {
   return (
-    <section className="rounded-[calc(var(--ui-radius)+8px)] border border-border overflow-hidden grain">
+    <section className="rounded-[calc(var(--ui-radius)+8px)] border border-border overflow-hidden grain animate-entry">
       <div className="relative bg-[color:var(--cafe-terracotta)]">
-        {/* subtle top texture */}
         <div className="absolute inset-0 opacity-[0.10] [mask-image:radial-gradient(70%_60%_at_50%_35%,black,transparent)]">
           <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(0,0,0,.28)_0px,transparent_1px,transparent_3px)]" />
         </div>
@@ -118,15 +87,14 @@ function Hero() {
             </div>
           </div>
 
-          {/* floating side label */}
           <div className="hidden lg:block absolute right-6 top-6">
             <div className="rounded-full border border-[color:color-mix(in_oklab,var(--cafe-paper)_28%,transparent)] bg-[color:color-mix(in_oklab,var(--cafe-paper)_12%,transparent)] px-4 py-2 tracked-tight text-[11px] uppercase text-[color:var(--cafe-paper)]">
-               <Image
-                  src="/LogoREY.png"
-                  width={250}
-                  height={250}
-                  alt="Picture of the author"
-                />
+              <Image
+                src="/LogoREY.png"
+                width={250}
+                height={250}
+                alt="Logo Café del Rey"
+              />
             </div>
           </div>
         </div>
@@ -135,7 +103,7 @@ function Hero() {
   );
 }
 
-function Shop() {
+function ShopSection({ products }: { products: CafeProduct[] | null }) {
   return (
     <section
       id="shop"
@@ -144,7 +112,6 @@ function Shop() {
       <div className="bg-[color:var(--cafe-river)]">
         <div className="px-[var(--space-page-x)] py-8 md:py-10">
           <div className="relative">
-            {/* Vertical labels (Touchy-esque) */}
             <div className="hidden lg:block absolute -left-10 top-2">
               <div className="vtype tracked font-sans text-[11px] uppercase text-[color:color-mix(in_oklab,var(--cafe-paper)_86%,transparent)]">
                 EN NUESTRA TIENDA
@@ -168,11 +135,17 @@ function Shop() {
               </p>
             </div>
 
-            <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {products.map((p) => (
-                <ShopItem key={p.id} product={p} />
-              ))}
-            </div>
+            {products === null ? (
+              <ShopSkeletons />
+            ) : (
+              <div className="mt-6 grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {products.map((p, i) => (
+                  <div key={p.id} className="animate-entry" style={{ animationDelay: `${i * 80}ms` }}>
+                    <ShopItem product={p} />
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="mt-6 rounded-[calc(var(--ui-radius)+6px)] border border-[color:color-mix(in_oklab,var(--cafe-paper)_22%,transparent)] bg-[color:color-mix(in_oklab,var(--cafe-paper)_10%,transparent)] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -217,10 +190,10 @@ function Manifesto() {
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-2">
-              <Chip>Transparencia</Chip>
-              <Chip>Respeto</Chip>
-              <Chip>Biodiversidad</Chip>
-              <Chip>Calma</Chip>
+              <ManifestoChip>Transparencia</ManifestoChip>
+              <ManifestoChip>Respeto</ManifestoChip>
+              <ManifestoChip>Biodiversidad</ManifestoChip>
+              <ManifestoChip>Calma</ManifestoChip>
             </div>
           </div>
         </div>
@@ -255,19 +228,19 @@ function Story() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <MiniPanel
                     title="Diseño que se siente"
-                    desc="Tipografía con carácter, tracking y superficies con grano — como papel y café." 
+                    desc="Tipografía con carácter, tracking y superficies con grano — como papel y café."
                   />
                   <MiniPanel
                     title="Ciencia sin solemnidad"
-                    desc="Parámetros claros (agua, ratio, molienda)… pero con humor y libertad." 
+                    desc="Parámetros claros (agua, ratio, molienda)… pero con humor y libertad."
                   />
                   <MiniPanel
                     title="Tropical, no cliché"
-                    desc="Verde Yungas + terracota + lila. Un trópico editorial." 
+                    desc="Verde Yungas + terracota + lila. Un trópico editorial."
                   />
                   <MiniPanel
                     title="Listo para escalar"
-                    desc="Tokens, componentes y secciones modulares. Cambias marca, no reescribes UI." 
+                    desc="Tokens, componentes y secciones modulares. Cambias marca, no reescribes UI."
                   />
                 </div>
               </Card>
@@ -315,7 +288,7 @@ function Footer() {
         <div className="lg:col-span-3 rounded-[calc(var(--ui-radius)+6px)] border border-border bg-panel p-5 grain">
           <div className="tracked font-sans text-[11px] uppercase text-fg/60">Colofón</div>
           <p className="mt-2 text-sm text-fg/80 leading-relaxed">
-            Inspiración de layout: {""}
+            Inspiración de layout:{" "}
             <a className="underline underline-offset-4 text-link" href="https://touchycoffee.com/" target="_blank" rel="noreferrer">
               touchycoffee.com
             </a>
@@ -328,7 +301,7 @@ function Footer() {
   );
 }
 
-function Chip({ children }: { children: React.ReactNode }) {
+function ManifestoChip({ children }: { children: React.ReactNode }) {
   return (
     <span className="h-9 px-4 rounded-full border border-[color:color-mix(in_oklab,var(--cafe-ink)_18%,transparent)] bg-[color:color-mix(in_oklab,var(--cafe-paper)_40%,transparent)] tracked-tight text-[11px] uppercase text-[color:color-mix(in_oklab,var(--cafe-ink)_78%,transparent)] inline-flex items-center">
       {children}

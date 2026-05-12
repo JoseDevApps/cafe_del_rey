@@ -104,6 +104,23 @@ dialog::backdrop {
     );
 }
 
+/* ---------- Entry animation ---------- */
+@keyframes slide-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-entry {
+  animation: slide-up-fade 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root { --ui-aura: none; }
+  .animate-entry { animation: none; }
 }

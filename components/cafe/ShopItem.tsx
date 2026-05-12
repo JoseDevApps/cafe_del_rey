@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button, Text } from "@/design-system/components";
 import { cx } from "@/design-system/components/_shared/cx";
-import { BagMock } from "./BagMock";
+import { ProductImage } from "./ProductImage";
 
 export type CafeProduct = {
   id: string;
@@ -15,6 +15,7 @@ export type CafeProduct = {
   sticker: { text: string; color: string };
   sizes: Array<{ label: string; price: string }>;
   soldOut?: boolean;
+  imageUrl?: string;
 };
 
 export function ShopItem({ product }: { product: CafeProduct }) {
@@ -29,14 +30,16 @@ export function ShopItem({ product }: { product: CafeProduct }) {
       className={cx(
         "rounded-[calc(var(--ui-radius)+4px)] border border-[color-mix(in_oklab,var(--color-fg)_18%,transparent)]",
         "bg-[color:color-mix(in_oklab,var(--color-bg)_85%,white)] shadow-[var(--ui-shadow-soft)]",
-        "p-4 grain",
-        "transition-transform hover:-translate-y-0.5"
+        "p-4 grain group",
+        "transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--ui-shadow)]"
       )}
     >
       <div className="aspect-[11/12] rounded-[calc(var(--ui-radius)+2px)] border border-border bg-muted grid place-items-center overflow-hidden">
-        <div className="w-[72%] -rotate-2">
-          <BagMock label={product.name} sticker={product.sticker} />
-        </div>
+        <ProductImage
+          imageUrl={product.imageUrl}
+          name={product.name}
+          sticker={product.sticker}
+        />
       </div>
 
       <div className="mt-4">
@@ -122,8 +125,10 @@ export function ShopItem({ product }: { product: CafeProduct }) {
           </Button>
         </div>
 
-        <details className="mt-4 rounded-[calc(var(--ui-radius)-6px)] border border-border bg-panel p-3">
-          <summary className="cursor-pointer tracked-tight text-[11px] uppercase text-fg/80">Leer ficha</summary>
+        <details className="mt-4 rounded-[calc(var(--ui-radius)-6px)] border border-border bg-panel p-3 open:pb-4 transition-all">
+          <summary className="cursor-pointer tracked-tight text-[11px] uppercase text-fg/80 select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between after:content-['+'] open:after:content-['-'] after:text-fg/40">
+            Leer ficha
+          </summary>
           <div className="pt-3 text-sm text-fg/80 leading-relaxed">
             <div className="grid grid-cols-2 gap-2">
               <div>
