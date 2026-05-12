@@ -1,6 +1,6 @@
 # Café del Rey — Documentación de Desarrollo
 
-> Registro completo de la sesión de mejoras: integración de FastAPI, panel de superadmin, mejoras de UX/UI y migración a Podman.
+> Registro completo de la sesión de mejoras: integración de FastAPI, panel de superadmin, mejoras de UX/UI, migración a Podman y deploy en Windows.
 
 ---
 
@@ -15,8 +15,9 @@
 7. [Fase 6 — Panel de superadmin](#7-fase-6--panel-de-superadmin)
 8. [Fase 7 — Mejoras UX/UI](#8-fase-7--mejoras-uxui)
 9. [Fase 8 — Migración a Podman](#9-fase-8--migración-a-podman)
-10. [Árbol de archivos final](#10-árbol-de-archivos-final)
-11. [Guía de uso rápido](#11-guía-de-uso-rápido)
+10. [Fase 9 — Deploy en Windows](#10-fase-9--deploy-en-windows)
+11. [Árbol de archivos final](#11-árbol-de-archivos-final)
+12. [Guía de uso rápido](#12-guía-de-uso-rápido)
 
 ---
 
@@ -543,7 +544,190 @@ podman system migrate
 
 ---
 
-## 10. Árbol de archivos final
+## 10. Fase 9 — Deploy en Windows
+
+**Objetivo:** ejecutar el stack completo en Windows de dos formas:
+- **Con Podman Desktop** (contenedores, misma experiencia que Linux/Mac)
+- **Nativo** (Node.js + Python directo, sin contenedores, para desarrollo rápido)
+
+### 10.1 Con Podman Desktop (recomendado)
+
+Podman Desktop en Windows usa **WSL2** como backend y **Docker Compose v5** como
+provider de compose. Esto significa que `podman compose` funciona igual que
+`docker compose` pero redirigiendo las llamadas de contenedor a Podman.
+
+#### Prerequisitos
+
+```powershell
+# Verificar que Podman Desktop está corriendo y la máquina WSL2 activa
+podman --version          # debe mostrar 5.x o superior
+podman machine list       # debe mostrar "Currently running"
+```
+
+#### Levantar el stack
+
+```powershell
+cd E:\Trabajos\cafe_del_rey
+
+# Opción A — comando directo
+podman compose up --build
+
+# Opción B — especificando el compose file explícitamente
+podman compose -f docker-compose.yml up --build
+
+# Opción C — con Makefile (si tienes make instalado)
+make up
+```
+
+> `podman compose` sin flags usa `docker-compose.yml` por defecto, igual que Docker.
+
+#### Detener el stack
+
+```powershell
+podman compose down          # detiene y elimina contenedores
+podman compose down -v       # también borra volúmenes (imágenes y DB)
+```
+
+#### Diferencias observadas en Windows con Podman Desktop
+
+| Aspecto | Comportamiento |
+|---|---|
+| `userns_mode: keep-id` | Ignorado — la VM WSL2 ya mapea UIDs correctamente |
+| `:z` SELinux label | Ignorado — WSL2 no usa SELinux |
+| Red interna `http://api:8000` | Funciona igual que Docker |
+| Volúmenes nombrados | Persisten entre reinicios de la VM |
+| Build cache | Compartida con Podman, no con Docker Desktop |
+
+Por esto en Windows se recomienda usar `docker-compose.yml` directamente
+(en lugar de `podman-compose.yml` que tiene ajustes solo necesarios en Linux).
+
+---
+
+### 10.2 Deploy nativo en Windows (sin contenedores)
+
+Ejecuta FastAPI y Next.js directamente con Python y Node.js del sistema.
+Útil cuando no se tiene Podman/Docker o se quiere máxima velocidad de desarrollo.
+
+#### Prerequisitos
+
+| Herramienta | Versión mínima | Descarga |
+|---|---|---|
+| Node.js | 18+ | [nodejs.org](https://nodejs.org) |
+| Python | 3.10+ | [python.org](https://python.org) |
+| npm | incluido con Node.js | — |
+
+#### Archivos creados para deploy nativo
+
+```
+deploy/windows/
+├── setup.ps1        ← instalación completa (una sola vez)
+├── start-dev.ps1    ← modo desarrollo (hot-reload en ambos servicios)
+├── start-prod.ps1   ← modo producción con PM2
+└── stop.ps1         ← detiene todos los servicios
+
+pm2.config.cjs       ← configuración PM2 (raíz del proyecto)
+```
+
+#### Paso 1 — Setup inicial (una sola vez)
+
+```powershell
+# Abrir PowerShell como usuario normal (NO como administrador)
+cd E:\Trabajos\cafe_del_rey
+
+# Permitir scripts PowerShell si es necesario
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+# Ejecutar setup
+.\deploy\windows\setup.ps1
+```
+
+El script realiza automáticamente:
+1. ✓ Verifica Node.js ≥ 18 y Python ≥ 3.10
+2. ✓ Crea `api/.venv` (entorno virtual Python aislado)
+3. ✓ Instala `requirements.txt` en el venv
+4. ✓ Crea `api/.env` si no existe
+5. ✓ Crea directorios `api/uploads/` y `api/data/`
+6. ✓ Ejecuta `npm install`
+7. ✓ Ejecuta `npm run build` (build de producción)
+8. ✓ Instala PM2 globalmente si no está
+
+#### Paso 2A — Modo desarrollo
+
+```powershell
+.\deploy\windows\start-dev.ps1
+```
+
+Abre **dos ventanas PowerShell**:
+- 🟡 **Ventana API** — `uvicorn main:app --reload` en puerto 8000
+- 🔵 **Ventana Frontend** — `next dev` en puerto 4001
+
+Los cambios en el código se reflejan automáticamente sin reiniciar.
+
+#### Paso 2B — Modo producción con PM2
+
+```powershell
+.\deploy\windows\start-prod.ps1
+```
+
+PM2 gestiona ambos procesos como **servicios persistentes**:
+- Los procesos sobreviven al cierre de la terminal
+- Se reinician automáticamente si fallan
+- Los logs se guardan en `logs/`
+
+```powershell
+# Comandos PM2 útiles
+pm2 list                  # ver estado de ambos servicios
+pm2 logs                  # logs en tiempo real
+pm2 logs cafe-api         # solo el API
+pm2 logs cafe-frontend    # solo el frontend
+pm2 monit                 # dashboard interactivo
+pm2 restart all           # reiniciar todo
+pm2 stop all              # pausar (los procesos siguen en PM2)
+.\deploy\windows\stop.ps1 # detener completamente
+```
+
+#### Arranque automático con Windows (inicio de sesión)
+
+```powershell
+# Generar y ejecutar el comando de registro en Windows Task Scheduler
+pm2 startup
+# Sigue las instrucciones que imprime (ejecutar el comando que muestra)
+
+# Guardar el estado actual de PM2
+pm2 save
+```
+
+Después de esto, los servicios arrancan automáticamente al iniciar sesión en Windows.
+
+#### Diferencia clave entre nativo y contenedores
+
+En modo nativo, `API_INTERNAL_URL` es `http://localhost:8000` (mismo host),
+mientras que en Docker/Podman es `http://api:8000` (red interna).
+
+El código en `types/api.ts` maneja esto automáticamente:
+```typescript
+const base = process.env.API_INTERNAL_URL    // Docker: http://api:8000
+          ?? process.env.NEXT_PUBLIC_API_URL  // Nativo: http://localhost:8000
+          ?? "http://localhost:8000";          // Fallback
+```
+
+---
+
+### 10.3 Resumen comparativo de métodos de deploy en Windows
+
+| | Podman Desktop | Nativo (PM2) |
+|---|---|---|
+| Aislamiento | ✅ Contenedores WSL2 | ❌ Procesos del sistema |
+| Velocidad setup | ⚡ Un comando | 🐢 Setup inicial más largo |
+| Hot-reload dev | ✅ Con polling | ✅ Nativo |
+| Persistencia | ✅ Volúmenes Docker | ✅ Filesystem local |
+| Logs centralizados | `podman compose logs` | `pm2 logs` |
+| Arranque automático | Podman machine autostart | PM2 startup |
+| Requiere Docker/Podman | ✅ Sí | ❌ No |
+
+---
+
+## 11. Árbol de archivos final
 
 ```
 cafe_del_rey/

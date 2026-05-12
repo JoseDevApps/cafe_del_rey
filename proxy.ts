@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Next.js 16: renamed from middleware.ts → proxy.ts, and function named "proxy"
 export const config = {
   matcher: ["/admin/:path*"],
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Allow access to the login page without a token
   if (request.nextUrl.pathname === "/admin/login") {
     return NextResponse.next();
