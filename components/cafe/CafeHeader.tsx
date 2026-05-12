@@ -24,7 +24,6 @@ export function CafeHeader() {
           <TopLink href="#shop">Tienda</TopLink>
           <TopLink href="#historia">Historia</TopLink>
           <TopLink href="#contacto">Contacto</TopLink>
-          <TopLink href="/design-system">UI</TopLink>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -55,7 +54,6 @@ export function CafeHeader() {
                 <MenuLink href="#historia">Nuestra historia</MenuLink>
                 <MenuLink href="#proceso">Proceso</MenuLink>
                 <MenuLink href="#contacto">Contacto</MenuLink>
-                <MenuLink href="/gd">Módulo GD (demo)</MenuLink>
               </div>
 
               <div className="mt-4 rounded-[calc(var(--ui-radius)-4px)] border border-border bg-muted p-3 text-sm text-fg/80">

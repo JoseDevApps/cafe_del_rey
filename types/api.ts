@@ -19,6 +19,18 @@ export type ApiProduct = {
   image_url: string | null;
 };
 
+/**
+ * Converts an absolute image URL from the API ("http://api:8000/uploads/foo.png"
+ * or "http://localhost:8000/uploads/foo.png") into the local proxy path
+ * "/api/uploads/foo.png". This keeps next/image requests same-origin and avoids
+ * Docker internal hostname leaking to the browser.
+ */
+export function toProxyUrl(imageUrl: string | null | undefined): string | undefined {
+  if (!imageUrl) return undefined;
+  const match = imageUrl.match(/\/uploads\/(.+)$/);
+  return match ? `/api/uploads/${match[1]}` : undefined;
+}
+
 export function mapApiProduct(p: ApiProduct): CafeProduct {
   return {
     id: p.id,
@@ -30,7 +42,7 @@ export function mapApiProduct(p: ApiProduct): CafeProduct {
     sticker: { text: p.sticker_text, color: p.sticker_color },
     sizes: p.sizes,
     soldOut: p.sold_out,
-    imageUrl: p.image_url ?? undefined,
+    imageUrl: toProxyUrl(p.image_url),
   };
 }
 

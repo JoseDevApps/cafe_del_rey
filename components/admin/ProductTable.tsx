@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button } from "@/design-system/components";
 import { ImageUploadModal } from "./ImageUploadModal";
 import type { ApiProduct } from "@/types/api";
+import { toProxyUrl } from "@/types/api";
 import { cx } from "@/design-system/components/_shared/cx";
 
 type Props = {
@@ -70,7 +71,7 @@ export function ProductTable({ initialProducts }: Props) {
                   {product.image_url ? (
                     <div className="relative h-12 w-12 rounded-[calc(var(--ui-radius)-8px)] border border-border overflow-hidden bg-muted">
                       <Image
-                        src={product.image_url}
+                        src={toProxyUrl(product.image_url) ?? product.image_url}
                         alt={product.name}
                         fill
                         className="object-cover"
@@ -104,7 +105,7 @@ export function ProductTable({ initialProducts }: Props) {
         <ImageUploadModal
           productId={editing.id}
           productName={editing.name}
-          currentImageUrl={editing.image_url}
+          currentImageUrl={toProxyUrl(editing.image_url)}
           onClose={() => setEditing(null)}
           onSuccess={(url) => {
             handleImageUpdate(editing.id, url);

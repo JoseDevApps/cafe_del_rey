@@ -1,6 +1,6 @@
 # Café del Rey — Documentación de Desarrollo
 
-> Registro completo de la sesión de mejoras: integración de FastAPI, panel de superadmin, mejoras de UX/UI, migración a Podman y deploy en Windows.
+> Registro completo de la sesión de mejoras: integración de FastAPI, panel de superadmin, mejoras de UX/UI, migración a Podman, deploy en Windows y correcciones posteriores.
 
 ---
 
@@ -11,13 +11,14 @@
 3. [Fase 2 — Docker Compose actualizado](#3-fase-2--docker-compose-actualizado)
 4. [Fase 3 — Tipos e integración dinámica de productos](#4-fase-3--tipos-e-integración-dinámica-de-productos)
 5. [Fase 4 — Skeleton y animaciones](#5-fase-4--skeleton-y-animaciones)
-6. [Fase 5 — Middleware de autenticación](#6-fase-5--middleware-de-autenticación)
+6. [Fase 5 — Proxy de autenticación (Next.js 16)](#6-fase-5--proxy-de-autenticación-nextjs-16)
 7. [Fase 6 — Panel de superadmin](#7-fase-6--panel-de-superadmin)
 8. [Fase 7 — Mejoras UX/UI](#8-fase-7--mejoras-uxui)
 9. [Fase 8 — Migración a Podman](#9-fase-8--migración-a-podman)
 10. [Fase 9 — Deploy en Windows](#10-fase-9--deploy-en-windows)
-11. [Árbol de archivos final](#11-árbol-de-archivos-final)
-12. [Guía de uso rápido](#12-guía-de-uso-rápido)
+11. [Correcciones y mejoras adicionales](#11-correcciones-y-mejoras-adicionales)
+12. [Árbol de archivos final](#12-árbol-de-archivos-final)
+13. [Guía de uso rápido](#13-guía-de-uso-rápido)
 
 ---
 
@@ -199,7 +200,12 @@ type ApiProduct = {
   sticker_text, sticker_color, sizes, sold_out, image_url
 }
 
+// Convierte URL absoluta de la API → ruta proxy local "/api/uploads/..."
+// Evita que "http://api:8000" (hostname interno Docker) llegue al navegador
+function toProxyUrl(imageUrl: string | null | undefined): string | undefined
+
 // Mapea ApiProduct → CafeProduct (formato interno del frontend)
+// Aplica toProxyUrl en image_url automáticamente
 function mapApiProduct(p: ApiProduct): CafeProduct
 
 // Fetch con ISR: revalida cada 60 segundos
@@ -287,17 +293,28 @@ Las tarjetas de producto usan `animation-delay` escalonado (`0ms`, `80ms`, `160m
 
 ---
 
-## 6. Fase 5 — Middleware de autenticación
+## 6. Fase 5 — Proxy de autenticación (Next.js 16)
 
 **Objetivo:** proteger todas las rutas `/admin/**` en Next.js.
 
-### `middleware.ts` (nuevo, raíz del proyecto)
+### Breaking change de Next.js 16
+
+Next.js 16 introdujo un cambio importante en cómo se define el middleware de edge:
+
+| Aspecto | Next.js 15 y anteriores | Next.js 16 |
+|---|---|---|
+| Nombre del archivo | `middleware.ts` | `proxy.ts` |
+| Nombre de la función exportada | `middleware` | `proxy` |
+
+Si coexisten ambos archivos o se usa el nombre incorrecto, Next.js lanza un error de arranque y no inicia el servidor.
+
+### `proxy.ts` (raíz del proyecto)
 
 ```typescript
 export const config = { matcher: ["/admin/:path*"] };
 
-export function middleware(request: NextRequest) {
-  // /admin/login siempre accesible (evita loop)
+export function proxy(request: NextRequest) {
+  // /admin/login siempre accesible (evita loop de redirección)
   if (request.nextUrl.pathname === "/admin/login") return NextResponse.next();
 
   const token = request.cookies.get("admin_token")?.value;
@@ -305,19 +322,21 @@ export function middleware(request: NextRequest) {
   // Sin token → redirige a login
   if (!token) return redirect("/admin/login");
 
-  // Decodifica el payload JWT (sin verificar firma — solo para expiración)
-  const payload = JSON.parse(atob(token.split(".")[1]));
-  if (payload.exp * 1000 < Date.now()) {
+  // Decodifica el payload JWT (sin verificar firma — solo para expiración rápida)
+  const [, payloadB64] = token.split(".");
+  const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8"));
+  if (payload.exp && payload.exp * 1000 < Date.now()) {
     // Token expirado → borra cookie + redirige
+    const response = NextResponse.redirect(new URL("/admin/login", request.url));
     response.cookies.delete("admin_token");
-    return redirect("/admin/login");
+    return response;
   }
 
   return NextResponse.next();
 }
 ```
 
-> **Nota de seguridad:** el middleware solo verifica la expiración sin la clave secreta (lectura del payload público del JWT). La verificación criptográfica completa ocurre server-side en las Server Actions antes de cada operación sensible.
+> **Nota de seguridad:** el proxy solo verifica la expiración sin la clave secreta (lectura del payload público del JWT). La verificación criptográfica completa ocurre server-side en las Server Actions antes de cada operación sensible.
 
 ---
 
@@ -390,6 +409,18 @@ El token JWT **nunca llega al navegador del usuario**:
 ## 8. Fase 7 — Mejoras UX/UI
 
 **Objetivo:** pulir la experiencia visual usando el design system existente.
+
+### Cambios en `CafeHeader.tsx`
+
+Se eliminaron dos enlaces de navegación que no pertenecen a la experiencia pública del sitio:
+
+| Enlace eliminado | Destino | Motivo |
+|---|---|---|
+| **UI** (nav escritorio) | `/design-system` | Ruta interna de desarrollo, no destinada a usuarios finales |
+| **Módulo GD (demo)** (menú desplegable) | `/gd` | Demo de otro proyecto embebida, confunde la navegación |
+
+El header quedó limpio con solo las 4 secciones propias del sitio:
+`Tienda · Historia · Proceso · Contacto`
 
 ### Cambios en `ShopItem.tsx`
 
@@ -727,7 +758,75 @@ const base = process.env.API_INTERNAL_URL    // Docker: http://api:8000
 
 ---
 
-## 11. Árbol de archivos final
+## 11. Correcciones y mejoras adicionales
+
+### 11.1 Proxy interno para imágenes de productos
+
+**Problema detectado:** al cargar la página pública o el panel admin, las imágenes fallaban con error 400.
+
+```
+GET /_next/image?url=http%3A%2F%2Fapi%3A8000%2Fuploads%2Frey-1.PNG 400 Bad Request
+⨯ upstream image http://api:8000/uploads/rey-1.PNG resolved to private ip ["10.89.0.2"]
+```
+
+**Causa raíz:** la API FastAPI construye las URLs de imágenes usando la URL de la petición entrante. Cuando Next.js la llama internamente vía `http://api:8000`, las `image_url` devueltas contienen ese hostname Docker interno (`http://api:8000/uploads/...`). Next.js bloquea el optimizador de imágenes cuando la URL destino resuelve a una IP privada (protección anti-SSRF).
+
+**Por qué no basta con `remotePatterns`:** aunque se añada `hostname: "api"` a `remotePatterns`, Next.js 16 introduce una comprobación de IP privada que rechaza la petición de todas formas.
+
+**Solución implementada — proxy route:**
+
+Se creó `app/api/uploads/[...path]/route.ts`:
+
+```
+Navegador / next/image optimizer
+  → GET /api/uploads/rey-1.PNG          (same-origin, no remotePatterns needed)
+  → Route handler en Next.js
+    → fetch http://api:8000/uploads/rey-1.PNG   (red interna Docker, trusted)
+    → devuelve imagen con Cache-Control: immutable
+```
+
+Y se añadió `toProxyUrl()` en `types/api.ts`:
+
+```typescript
+// "http://api:8000/uploads/foo.png"  →  "/api/uploads/foo.png"
+// "http://localhost:8000/uploads/foo.png"  →  "/api/uploads/foo.png"
+function toProxyUrl(imageUrl: string | null | undefined): string | undefined {
+  if (!imageUrl) return undefined;
+  const match = imageUrl.match(/\/uploads\/(.+)$/);
+  return match ? `/api/uploads/${match[1]}` : undefined;
+}
+```
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---|---|
+| `app/api/uploads/[...path]/route.ts` | **Nuevo** — proxy GET que reenvía a `API_INTERNAL_URL/uploads/...` |
+| `types/api.ts` | `toProxyUrl()` nueva + usada en `mapApiProduct()` |
+| `components/admin/ProductTable.tsx` | Usa `toProxyUrl()` en miniatura y en `currentImageUrl` del modal |
+| `next.config.ts` | Revertido: eliminado `hostname: "api"` (ya no necesario) |
+
+**Ventajas del enfoque proxy:**
+
+- ✅ Funciona en Docker, Podman y nativo Windows sin cambios
+- ✅ No expone el hostname interno Docker al navegador
+- ✅ El caché `immutable` evita re-fetches innecesarios
+- ✅ No requiere `remotePatterns` para el hostname `api`
+
+---
+
+### 11.2 Limpieza de navegación
+
+Se eliminaron dos enlaces del `CafeHeader` que no pertenecían a la experiencia pública:
+
+- **`UI`** en el nav de escritorio → enlazaba a `/design-system` (ruta de desarrollo interna)
+- **`Módulo GD (demo)`** en el menú desplegable → enlazaba a `/gd` (demo de otro proyecto)
+
+El menú queda con las 4 secciones propias: **Tienda · Historia · Proceso · Contacto**.
+
+---
+
+## 12. Árbol de archivos final
 
 ```
 cafe_del_rey/
@@ -751,6 +850,9 @@ cafe_del_rey/
 │   ├── page.tsx                  ← ✏️  Async Server Component + Suspense
 │   ├── layout.tsx
 │   ├── providers.tsx
+│   ├── api/
+│   │   └── uploads/[...path]/
+│   │       └── route.ts          ← 🆕 Proxy de imágenes (evita IP privada)
 │   ├── actions/
 │   │   ├── preferences.ts        (existente)
 │   │   └── admin.ts              ← 🆕 Server Actions admin
@@ -762,7 +864,7 @@ cafe_del_rey/
 │
 ├── components/
 │   ├── cafe/
-│   │   ├── CafeHeader.tsx        (existente)
+│   │   ├── CafeHeader.tsx        ← ✏️  Eliminados: tab UI + Módulo GD
 │   │   ├── ShopItem.tsx          ← ✏️  + imageUrl, ProductImage, hover
 │   │   ├── BagMock.tsx           (existente)
 │   │   ├── ProcessStrip.tsx      (existente)
@@ -771,7 +873,7 @@ cafe_del_rey/
 │   │   └── ShopItemSkeleton.tsx  ← 🆕 Loading skeleton
 │   ├── admin/                    ← 🆕 Componentes del panel admin
 │   │   ├── AdminHeader.tsx
-│   │   ├── ProductTable.tsx
+│   │   ├── ProductTable.tsx      ← ✏️  Usa toProxyUrl para imágenes
 │   │   └── ImageUploadModal.tsx
 │   └── gd/                       (existente, sin cambios)
 │
@@ -784,10 +886,10 @@ cafe_del_rey/
 │   └── tokens/                   (existente, sin cambios)
 │
 ├── types/
-│   └── api.ts                    ← 🆕 ApiProduct + fetchProducts()
+│   └── api.ts                    ← 🆕 ApiProduct + toProxyUrl() + fetchProducts()
 │
-├── middleware.ts                  ← 🆕 Protección /admin/**
-├── next.config.ts                 ← ✏️  + remotePatterns
+├── proxy.ts                       ← 🆕 Protección /admin/** (Next.js 16: "proxy.ts")
+├── next.config.ts                 ← ✏️  remotePatterns (solo localhost:8000)
 ├── docker-compose.yml             ← ✏️  + servicio api + volúmenes
 ├── podman-compose.yml             ← 🆕 Configuración Podman rootless
 ├── Makefile                       ← 🆕 Atajos Docker + Podman
@@ -799,7 +901,7 @@ Leyenda: 🆕 creado  ✏️ modificado
 
 ---
 
-## 11. Guía de uso rápido
+## 13. Guía de uso rápido
 
 ### Levantar el stack
 
