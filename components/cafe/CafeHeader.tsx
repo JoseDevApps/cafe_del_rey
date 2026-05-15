@@ -55,85 +55,86 @@ export function CafeHeader() {
             <TopLink href="#contacto">Contacto</TopLink>
           </nav>
 
-          {/* Botón menú */}
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-expanded={menuOpen}
-            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-            className={cx(
-              "shrink-0 h-10 px-4 rounded-full",
-              "border border-border bg-muted",
-              "tracked-tight text-[11px] uppercase",
-              "inline-flex items-center justify-center gap-1.5",
-              "hover:bg-[color:color-mix(in_oklab,var(--color-fg)_6%,transparent)]",
-              "transition-colors"
-            )}
-          >
-            {menuOpen ? (
+          {/* Botón menú + panel flotante */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-expanded={menuOpen}
+              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+              className={cx(
+                "shrink-0 h-10 px-4 rounded-full",
+                "border border-border bg-muted",
+                "tracked-tight text-[11px] uppercase",
+                "inline-flex items-center justify-center gap-1.5",
+                "hover:bg-[color:color-mix(in_oklab,var(--color-fg)_6%,transparent)]",
+                "transition-colors"
+              )}
+            >
+              {menuOpen ? (
+                <>
+                  <span aria-hidden>✕</span>
+                  <span className="hidden sm:inline">Cerrar</span>
+                </>
+              ) : (
+                "Menú"
+              )}
+            </button>
+
+            {menuOpen && (
               <>
-                <span aria-hidden>✕</span>
-                <span className="hidden sm:inline">Cerrar</span>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 z-30 bg-fg/10 backdrop-blur-[2px]"
+                  onClick={close}
+                  aria-hidden
+                />
+
+                {/* Panel del menú */}
+                <div
+                  role="dialog"
+                  aria-label="Menú de navegación"
+                  className={cx(
+                    "absolute top-full right-0 z-40 mt-1",
+                    "w-[min(88vw,420px)]",
+                    "rounded-b-[calc(var(--ui-radius)+8px)] border border-border bg-panel",
+                    "shadow-[var(--ui-shadow)] grain",
+                    "p-4"
+                  )}
+                >
+                  <div className="tracked font-sans text-[11px] uppercase text-fg/70">
+                    Navegación
+                  </div>
+
+                  <nav className="mt-3 grid gap-2">
+                    <MenuLink href="#shop" onClick={close}>Tienda</MenuLink>
+                    <MenuLink href="#historia" onClick={close}>Nuestra historia</MenuLink>
+                    <MenuLink href="#proceso" onClick={close}>Proceso</MenuLink>
+                    <MenuLink href="#contacto" onClick={close}>Contacto</MenuLink>
+                  </nav>
+
+                  <div className="mt-4 rounded-[calc(var(--ui-radius)-4px)] border border-border bg-muted p-3 text-sm text-fg/80">
+                    <div className="tracked-tight text-[10px] uppercase text-fg/60">Envíos</div>
+                    <div className="mt-1">
+                      En La Paz: coordinación por WhatsApp. Nacional: courier.
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={close}
+                      className="tracked-tight text-[11px] uppercase text-fg/50 hover:text-fg transition-colors"
+                    >
+                      Cerrar (esc)
+                    </button>
+                  </div>
+                </div>
               </>
-            ) : (
-              "Menú"
             )}
-          </button>
+          </div>
         </div>
       </header>
-
-      {/* Backdrop + panel flotante — fuera del <header> para evitar conflictos de stacking context */}
-      {menuOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-30 bg-fg/10 backdrop-blur-[2px]"
-            onClick={close}
-            aria-hidden
-          />
-
-          {/* Panel del menú */}
-          <div
-            role="dialog"
-            aria-label="Menú de navegación"
-            className={cx(
-              "fixed right-[var(--space-page-x)] top-[calc(4rem+1px)] z-50",
-              "w-[min(88vw,420px)]",
-              "rounded-[calc(var(--ui-radius)+8px)] border border-border bg-panel",
-              "shadow-[var(--ui-shadow)] grain",
-              "p-4"
-            )}
-          >
-            <div className="tracked font-sans text-[11px] uppercase text-fg/70">
-              Navegación
-            </div>
-
-            <nav className="mt-3 grid gap-2">
-              <MenuLink href="#shop" onClick={close}>Tienda</MenuLink>
-              <MenuLink href="#historia" onClick={close}>Nuestra historia</MenuLink>
-              <MenuLink href="#proceso" onClick={close}>Proceso</MenuLink>
-              <MenuLink href="#contacto" onClick={close}>Contacto</MenuLink>
-            </nav>
-
-            <div className="mt-4 rounded-[calc(var(--ui-radius)-4px)] border border-border bg-muted p-3 text-sm text-fg/80">
-              <div className="tracked-tight text-[10px] uppercase text-fg/60">Envíos</div>
-              <div className="mt-1">
-                En La Paz: coordinación por WhatsApp. Nacional: courier.
-              </div>
-            </div>
-
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={close}
-                className="tracked-tight text-[11px] uppercase text-fg/50 hover:text-fg transition-colors"
-              >
-                Cerrar (esc)
-              </button>
-            </div>
-          </div>
-        </>
-      )}
     </>
   );
 }

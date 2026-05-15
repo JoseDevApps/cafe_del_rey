@@ -16,21 +16,23 @@ function usePrefersDark() {
 
 export function ThemeSwitch() {
   const prefersDark = usePrefersDark();
-  const [theme, setTheme] = useState<string>(LIGHT);
+  const [theme, setTheme] = useState<string>(() => {
+    if (typeof window === "undefined") return LIGHT;
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    const fromHtml = window.document.documentElement.dataset.theme;
+    return saved ?? fromHtml ?? LIGHT;
+  });
 
-  // Inicializa: localStorage -> html[data-theme] -> system preference
+  // Inicializa/sincroniza html[data-theme] sin setState dentro del effect
   useEffect(() => {
     const html = document.documentElement;
-
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const fromHtml = html.dataset.theme;
-
-    const initial =
-      saved ?? fromHtml ?? (prefersDark ? DARK : LIGHT);
-
-    html.dataset.theme = initial;
-    setTheme(initial);
-  }, [prefersDark]);
+    if (!html.dataset.theme) {
+      const fallback = prefersDark ? DARK : LIGHT;
+      html.dataset.theme = theme || fallback;
+      return;
+    }
+    html.dataset.theme = theme;
+  }, [prefersDark, theme]);
 
   const isDark = theme === DARK;
 

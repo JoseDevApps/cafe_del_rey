@@ -26,7 +26,8 @@ export async function GET(
   let upstream: Response;
   try {
     upstream = await fetch(url, { cache: "force-cache" });
-  } catch {
+  } catch (error) {
+    console.error("Upload proxy upstream error", { url, error });
     return new NextResponse(null, { status: 502 });
   }
 

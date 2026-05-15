@@ -14,7 +14,9 @@ export function PreferencesPanel() {
         <Text size="sm" tone="muted">Theme</Text>
         <select
           className="bg-bg text-fg border border-border rounded px-2 py-1"
-          onChange={(e) => startTransition(() => setUIPreferences({ theme: e.target.value }))}
+          onChange={(e) => startTransition(() => {
+            void setUIPreferences({ theme: e.target.value });
+          })}
           disabled={pending}
           defaultValue="cafe-rey"
         >
@@ -32,7 +34,9 @@ export function PreferencesPanel() {
           max="1.15"
           step="0.05"
           defaultValue="1"
-          onChange={(e) => startTransition(() => setUIPreferences({ scale: e.target.value }))}
+          onChange={(e) => startTransition(() => {
+            void setUIPreferences({ scale: e.target.value });
+          })}
           disabled={pending}
         />
       </div>

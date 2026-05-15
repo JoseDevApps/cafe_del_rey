@@ -4,9 +4,17 @@ import type { ApiProduct } from "@/types/api";
 
 async function getProducts(): Promise<ApiProduct[]> {
   const base = process.env.API_INTERNAL_URL ?? "http://localhost:8000";
-  const res = await fetch(`${base}/products`, { cache: "no-store" });
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${base}/products`, { cache: "no-store" });
+    if (!res.ok) {
+      console.error("Failed to load admin products", { status: res.status });
+      return [];
+    }
+    return res.json();
+  } catch (error) {
+    console.error("Failed to load admin products", error);
+    return [];
+  }
 }
 
 export default async function AdminPage() {

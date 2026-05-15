@@ -103,7 +103,7 @@ export function Showcase() {
             }
           >
             <Text tone="muted">
-              Put any content here. For larger projects, you'll likely swap this to Radix Dialog for more features.
+              Put any content here. For larger projects, you&apos;ll likely swap this to Radix Dialog for more features.
             </Text>
           </Modal>
         </Card>

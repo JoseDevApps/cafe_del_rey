@@ -117,7 +117,6 @@ export function ShopItem({ product }: { product: CafeProduct }) {
             disabled={soldOut}
             onClick={() => {
               // Stub: replace with a real cart later.
-              // eslint-disable-next-line no-alert
               alert(`Añadido: ${qty} × ${product.name} (${chosen.label})`);
             }}
           >

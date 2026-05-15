@@ -93,7 +93,7 @@ export function ProductTable({ initialProducts }: Props) {
                   colSpan={4}
                   className="px-4 py-10 text-center text-sm text-fg/40"
                 >
-                  No hay productos. Crea el primero con "+ Nuevo producto".
+                  No hay productos. Crea el primero con &quot;+ Nuevo producto&quot;.
                 </td>
               </tr>
             )}

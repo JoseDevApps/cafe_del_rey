@@ -23,7 +23,7 @@
       transparent 62%
     ),
     radial-gradient(
-      900px 680px at 88% 18%,
+      900px 680px at 88% 18%,f
       color-mix(in oklab, var(--cafe-yungas) 12%, transparent) 0%,
       transparent 58%
     ),
@@ -80,7 +80,7 @@ dialog::backdrop {
 
 /* Fine grain overlay helper */
 .grain {
-  position: relative;
+  /* position: relative; */
 }
 .grain::after {
   content: "";

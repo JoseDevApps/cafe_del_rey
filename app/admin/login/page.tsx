@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { loginAction } from "@/app/actions/admin";
 import { Button, Input, Text } from "@/design-system/components";
 
@@ -51,12 +52,12 @@ export default function LoginPage() {
         </form>
 
         <div className="text-center">
-          <a
+          <Link
             href="/"
             className="text-[11px] tracked-tight uppercase text-fg/50 underline underline-offset-4 hover:text-fg"
           >
             ← Volver al sitio
-          </a>
+          </Link>
         </div>
       </div>
     </div>

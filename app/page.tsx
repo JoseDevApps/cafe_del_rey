@@ -41,8 +41,8 @@ async function ShopAsync() {
   let products: CafeProduct[] = [];
   try {
     products = await fetchProducts();
-  } catch {
-    // API unavailable — render empty grid gracefully
+  } catch (error) {
+    console.error("Failed to fetch products", error);
   }
   return <ShopSection products={products} />;
 }

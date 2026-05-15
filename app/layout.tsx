@@ -1,5 +1,5 @@
 import "@/styles/globals.css";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Merienda, Azeret_Mono } from "next/font/google";
@@ -37,12 +37,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const c = await cookies();
   const theme = c.get("ui.theme")?.value ?? "cafe-rey";
   const scale = c.get("ui.scale")?.value ?? "1";
+  const htmlStyle = { "--ui-scale": scale } as CSSProperties;
 
   return (
-    <html
-      lang="es"
-      data-theme={theme}
-      style={{ ["--ui-scale" as any]: scale }}
+      <html
+        lang="es"
+        data-theme={theme}
+        style={htmlStyle}
       suppressHydrationWarning
       className={`${merienda.variable} ${azeretMono.variable}`}
     >

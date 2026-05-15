@@ -55,7 +55,7 @@ export function Modal({
       ref={ref}
       className={cx(
         "p-0 bg-transparent border-0 w-[min(680px,calc(100vw-32px))]",
-        "overflow-visible"
+        "overflow-hidden"
       )}
       onClick={(e) => {
         // click outside closes (basic behavior)
@@ -70,7 +70,7 @@ export function Modal({
 
         <Divider />
 
-        <div className="p-5 space-y-3">{children}</div>
+        <div className="p-5 space-y-3 max-h-[min(60dvh,480px)] overflow-y-auto overscroll-contain">{children}</div>
 
         {footer ? (
           <>

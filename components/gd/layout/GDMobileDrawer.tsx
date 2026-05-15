@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { animate, stagger, set, remove } from "animejs";
 import { cx } from "@/design-system/components/_shared/cx";
 import { Information, UserMultiple, Tools, Map, Flash } from "@carbon/icons-react";
@@ -53,17 +53,17 @@ export function GDMobileDrawer() {
   const itemRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
   // Abre: monta y anima
-  const openDrawer = () => {
+  const openDrawer = useCallback(() => {
     if (open) return;
     setRendered(true);
     setOpen(true);
-  };
+  }, [open]);
 
   // Cierra: anima y desmonta al final
-  const closeDrawer = () => {
+  const closeDrawer = useCallback(() => {
     if (!open) return;
     setOpen(false);
-  };
+  }, [open]);
 
   // Cierre con ESC
   useEffect(() => {
@@ -75,13 +75,7 @@ export function GDMobileDrawer() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [rendered]);
-
-  // Si cambia la ruta, cerramos el drawer (UX limpio)
-  useEffect(() => {
-    if (rendered) closeDrawer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [rendered, closeDrawer]);
 
   // Animaciones: cuando open/rendered cambian
   useEffect(() => {
@@ -100,7 +94,9 @@ export function GDMobileDrawer() {
       // Sin animación: solo estados finales
       overlay.style.opacity = open ? "1" : "0";
       drawer.style.transform = open ? "translateX(0)" : "translateX(-16px)";
-      if (!open) setRendered(false);
+      if (!open) {
+        requestAnimationFrame(() => setRendered(false));
+      }
       return;
     }
 
@@ -178,7 +174,9 @@ export function GDMobileDrawer() {
         <div className="lg:hidden">
           {/* Overlay */}
           <div
-            ref={(n) => (overlayRef.current = n)}
+            ref={(n) => {
+              overlayRef.current = n;
+            }}
             className="fixed inset-0 z-50 bg-black/40"
             onClick={closeDrawer}
             aria-hidden="true"
@@ -187,7 +185,9 @@ export function GDMobileDrawer() {
           {/* Drawer */}
           <div
             id="gd-mobile-drawer"
-            ref={(n) => (drawerRef.current = n)}
+            ref={(n) => {
+              drawerRef.current = n;
+            }}
             className={cx(
               "fixed z-50 left-0 top-0 h-dvh",
               "w-[min(320px,88vw)]",
@@ -236,13 +236,16 @@ export function GDMobileDrawer() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      ref={(n) => (itemRefs.current[idx] = n)}
+                      ref={(n) => {
+                        itemRefs.current[idx] = n;
+                      }}
                       className={cx(
                         "flex items-center gap-3",
                         "px-3 py-2 rounded-[calc(var(--ui-radius)-12px)] text-sm",
                         active ? "bg-white/10 text-white" : "text-white/75 hover:bg-white/6 hover:text-white",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                       )}
+                      onClick={closeDrawer}
                       aria-current={active ? "page" : undefined}
                     >
                       <span className="text-white/70">{item.icon}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo, useSyncExternalStore, useState } from "react";
 import { createPortal } from "react-dom";
 import { cx } from "../_shared/cx";
 
@@ -18,6 +18,10 @@ type ToastFn = (t: ToastInput) => void;
 
 const ToastContext = createContext<ToastFn | null>(null);
 
+function noopSubscribe() {
+  return () => {};
+}
+
 export function useToast(): ToastFn {
   const fn = useContext(ToastContext);
   if (!fn) throw new Error("useToast must be used within ToastProvider");
@@ -26,9 +30,7 @@ export function useToast(): ToastFn {
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
   const toast = useMemo<ToastFn>(() => {
     return (t) => {

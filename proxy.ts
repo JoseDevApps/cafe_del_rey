@@ -29,7 +29,10 @@ export function proxy(request: NextRequest) {
       response.cookies.delete("admin_token");
       return response;
     }
-  } catch {
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Invalid admin_token cookie", error);
+    }
     const loginUrl = new URL("/admin/login", request.url);
     return NextResponse.redirect(loginUrl);
   }

@@ -5,6 +5,22 @@ import { cx } from "../_shared/cx";
 type Variant = "primary" | "secondary" | "danger" | "ghost";
 type Size = "sm" | "md" | "lg";
 
+type CommonProps = {
+  variant?: Variant;
+  size?: Size;
+  className?: string;
+};
+
+type ButtonAsLinkProps = CommonProps & {
+  href: string;
+} & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "className">;
+
+type ButtonAsButtonProps = CommonProps & {
+  href?: undefined;
+} & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "className">;
+
+type ButtonProps = ButtonAsLinkProps | ButtonAsButtonProps;
+
 const sizeStyles: Record<Size, string> = {
   sm: "h-9 px-3 text-sm",
   md: "h-10 px-4 text-sm",
@@ -18,18 +34,8 @@ const variantStyles: Record<Variant, string> = {
   ghost: "bg-transparent text-fg hover:bg-muted",
 };
 
-export function Button({
-  href,
-  variant = "primary",
-  size = "md",
-  className,
-  ...props
-}: {
-  href?: string;
-  variant?: Variant;
-  size?: Size;
-  className?: string;
-} & (React.ButtonHTMLAttributes<HTMLButtonElement> | React.AnchorHTMLAttributes<HTMLAnchorElement>)) {
+export function Button(props: ButtonProps) {
+  const { variant = "primary", size = "md", className } = props;
   const base = cx(
     "inline-flex items-center justify-center gap-2",
     "rounded-[calc(var(--ui-radius)-8px)] border border-border shadow-[var(--ui-shadow-soft)]",
@@ -40,9 +46,23 @@ export function Button({
     className
   );
 
-  if (href) {
-    return <Link href={href} className={base} {...(props as any)} />;
+  if ("href" in props && props.href) {
+    const linkProps = props as ButtonAsLinkProps;
+    const { href, ...linkRest } = linkProps;
+    return (
+      <Link
+        href={href}
+        className={base}
+        {...(linkRest as Omit<ButtonAsLinkProps, "href" | "variant" | "size" | "className">)}
+      />
+    );
   }
 
-  return <button className={base} {...(props as any)} />;
+  const buttonProps = props as ButtonAsButtonProps;
+  return (
+    <button
+      className={base}
+      {...(buttonProps as Omit<ButtonAsButtonProps, "variant" | "size" | "className">)}
+    />
+  );
 }

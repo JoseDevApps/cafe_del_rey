@@ -66,13 +66,21 @@ export function GDSidebar() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw === "1") setCollapsed(true);
-    } catch {}
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("Failed to read sidebar state", error);
+      }
+    }
   }, []);
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
-    } catch {}
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("Failed to persist sidebar state", error);
+      }
+    }
   }, [collapsed]);
 
   function setLabelVisibility(show: boolean) {
@@ -278,7 +286,9 @@ export function GDSidebar() {
 
   return (
     <aside
-      ref={(n) => (asideRef.current = n)}
+      ref={(n) => {
+        asideRef.current = n;
+      }}
       className={cx(
         "hidden lg:flex shrink-0",
         "sticky top-0 h-dvh",
@@ -311,7 +321,9 @@ export function GDSidebar() {
                 </div>
 
                 <div
-                  ref={(n) => (brandTextWrapRef.current = n)}
+                  ref={(n) => {
+                    brandTextWrapRef.current = n;
+                  }}
                   className="min-w-0 leading-tight"
                   style={{ display: "block" }}
                 >
@@ -381,7 +393,9 @@ export function GDSidebar() {
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
           <div className="px-4 pt-4 pb-2">
             <div
-              ref={(n) => (sectionTitleRef.current = n)}
+              ref={(n) => {
+                sectionTitleRef.current = n;
+              }}
               className="text-xs font-display text-white/50 tracking-wide overflow-hidden"
               style={{ display: collapsed ? "none" : "block" }}
             >
@@ -390,7 +404,13 @@ export function GDSidebar() {
           </div>
 
           <div className="px-2 pb-6">
-            <details ref={(n) => (detailsRef.current = n)} open className="group">
+            <details
+              ref={(n) => {
+                detailsRef.current = n;
+              }}
+              open
+              className="group"
+            >
               <summary
                 className={cx(
                   "list-none cursor-pointer select-none",
@@ -405,7 +425,9 @@ export function GDSidebar() {
                   </span>
 
                   <span
-                    ref={(n) => (groupLabelWrapRef.current = n)}
+                    ref={(n) => {
+                      groupLabelWrapRef.current = n;
+                    }}
                     className="font-display text-sm text-white/90 truncate overflow-hidden"
                     style={{ display: collapsed ? "none" : "inline" }}
                   >
@@ -414,7 +436,9 @@ export function GDSidebar() {
                 </span>
 
                 <span
-                  ref={(n) => (chevronRef.current = n)}
+                  ref={(n) => {
+                    chevronRef.current = n;
+                  }}
                   className="text-white/45 inline-flex"
                   aria-hidden="true"
                   style={{ display: collapsed ? "none" : "inline-flex" }}
@@ -423,7 +447,12 @@ export function GDSidebar() {
                 </span>
               </summary>
 
-              <div ref={(n) => (submenuWrapRef.current = n)} className="mt-2">
+              <div
+                ref={(n) => {
+                  submenuWrapRef.current = n;
+                }}
+                className="mt-2"
+              >
                 <nav className={cx("space-y-1", collapsed ? "px-1" : "pl-2 pr-2")} aria-label="Menú GD">
                   {MENU.map((item, idx) => {
                     const active = isActivePath(pathname, item.href);
@@ -435,7 +464,9 @@ export function GDSidebar() {
                         aria-current={active ? "page" : undefined}
                         aria-label={item.label}
                         title={collapsed ? item.label : undefined}
-                        ref={(n) => (itemLinkRefs.current[idx] = n)}
+                        ref={(n) => {
+                          itemLinkRefs.current[idx] = n;
+                        }}
                         {...bindItemMotion(idx)}
                         className={cx(
                           "flex items-center gap-3",
@@ -449,8 +480,10 @@ export function GDSidebar() {
                       >
                         <span className="text-white/70 shrink-0">{item.icon}</span>
 
-                        <span
-                          ref={(n) => (itemLabelWrapRefs.current[idx] = n)}
+                          <span
+                          ref={(n) => {
+                            itemLabelWrapRefs.current[idx] = n;
+                          }}
                           className="min-w-0 truncate overflow-hidden"
                           style={{ display: collapsed ? "none" : "inline" }}
                         >
